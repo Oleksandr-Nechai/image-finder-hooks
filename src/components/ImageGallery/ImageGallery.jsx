@@ -48,7 +48,10 @@ function ImageGallery({ nameImage, visible, toggleVisible }) {
   //   scrollToBottom(x);
   // }, [page, x]);
 
-  useEffect(() => resetPage(), [nameImage]);
+  useEffect(() => {
+    resetPage();
+  }, [nameImage]);
+
   useEffect(() => {
     const fetchImages = async () => {
       try {
@@ -62,17 +65,17 @@ function ImageGallery({ nameImage, visible, toggleVisible }) {
           return;
         }
         findImages(hits.length);
-
         const totalImages = totalHits === 500 ? totalHits + 1 : totalHits;
+
         if (totalImages <= perPage * (page - 1) + hits.length) {
           finishSearch();
         }
-
-        page === 1
-          ? setImages([...hits])
-          : setImages(prevImages => [...prevImages, ...hits]);
-
-        setTotalElements(totalImages);
+        if (page === 1) {
+          setImages([...hits]);
+          setTotalElements(totalImages);
+        } else {
+          setImages(prevImages => [...prevImages, ...hits]);
+        }
       } catch (error) {
         handlerServerError(error.message);
       } finally {
@@ -80,7 +83,8 @@ function ImageGallery({ nameImage, visible, toggleVisible }) {
       }
     };
     fetchImages();
-  }, [nameImage, page, perPage, toggleVisible]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, perPage, toggleVisible]);
 
   // const scrollToBottom = scroll => {
   //   window.scrollBy({
