@@ -1,4 +1,4 @@
-import { Component } from 'react';
+import { useState } from 'react';
 import { GoEyeClosed } from 'react-icons/go';
 import PropTypes from 'prop-types';
 
@@ -10,36 +10,29 @@ import {
   ModalButtonStyled,
 } from './ImageGalleryItem.styled';
 
-class ImageGalleryItems extends Component {
-  state = {
-    isOpen: false,
+function ImageGalleryItems({ image }) {
+  const { webformatURL, tags, largeImageURL } = image;
+  const [isOpen, setIsOpen] = useState(false);
+
+  const toggleModal = () => {
+    setIsOpen(prevIsOpen => !prevIsOpen);
   };
 
-  toggleModal = () => {
-    this.setState(({ isOpen }) => ({ isOpen: !isOpen }));
-  };
-
-  render() {
-    const { webformatURL, tags, largeImageURL } = this.props.image;
-    const { galleryItemRef } = this.props;
-    const { isOpen } = this.state;
-
-    return (
-      <>
-        <GalleryItem onClick={this.toggleModal} ref={galleryItemRef}>
-          <Image src={webformatURL} alt={tags} />
-        </GalleryItem>
-        {isOpen && (
-          <Modal onClickModal={this.toggleModal}>
-            <LargeImage src={largeImageURL} alt={tags} />
-            <ModalButtonStyled type="button" onClick={this.toggleModal}>
-              <GoEyeClosed />
-            </ModalButtonStyled>
-          </Modal>
-        )}
-      </>
-    );
-  }
+  return (
+    <>
+      <GalleryItem onClick={toggleModal}>
+        <Image src={webformatURL} alt={tags} />
+      </GalleryItem>
+      {isOpen && (
+        <Modal onClickModal={toggleModal}>
+          <LargeImage src={largeImageURL} alt={tags} />
+          <ModalButtonStyled type="button" onClick={toggleModal}>
+            <GoEyeClosed />
+          </ModalButtonStyled>
+        </Modal>
+      )}
+    </>
+  );
 }
 
 export default ImageGalleryItems;
@@ -50,5 +43,4 @@ ImageGalleryItems.propTypes = {
     tags: PropTypes.string.isRequired,
     largeImageURL: PropTypes.string.isRequired,
   }).isRequired,
-  galleryItemRef: PropTypes.object.isRequired,
 };

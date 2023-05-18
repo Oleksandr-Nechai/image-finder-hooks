@@ -1,9 +1,10 @@
-import { Component, createRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
 
 import ImageGalleryItems from 'components/ImageGalleryItem';
 import Button from 'components/Button';
 import Loader from 'components/Loader';
+
 import { getImages } from 'services/api';
 import {
   findImages,
@@ -11,135 +12,113 @@ import {
   handlerServerError,
   finishSearch,
 } from 'services/notifications';
+
 import { Gallery, GalleryList, GalleryFooter } from './ImageGallery.styled';
 
-class ImageGallery extends Component {
-  state = {
-    images: [],
-    page: 1,
-    totalElements: null,
-    perPage: 12,
-    galleryItemRef: createRef(),
-    galleryFooterRef: createRef(),
-    galleryListRef: createRef(),
-  };
+function ImageGallery({ nameImage, visible, toggleVisible }) {
+  const [images, setImages] = useState([]);
+  const [page, setPage] = useState(1);
+  const [totalElements, setTotalElements] = useState(null);
+  const [perPage] = useState(12);
+  // const [x, setX] = useState(null);
 
-  async componentDidMount() {
-    await this.fetchImages();
-  }
+  const galleryListRef = useRef();
 
-  async componentDidUpdate(prevProps, prevState) {
-    if (prevProps.nameImage !== this.props.nameImage) {
-      await this.resetPage();
-      await this.fetchImages();
-    }
-    if (prevState.page !== this.state.page && this.state.page !== 1) {
-      await this.fetchImages();
-    }
-    if (this.state.page !== 1) {
-      this.scrollToBottom();
-    }
-  }
+  // useEffect(() => {
+  //   if (page === 1) {
+  //     return;
+  //   }
+  //   const gapSizeGallery = window
+  //     .getComputedStyle(galleryListRef.current)
+  //     .getPropertyValue('gap');
 
-  scrollToBottom = () => {
-    const { galleryItemRef, galleryFooterRef, galleryListRef } = this.state;
+  //   const heightGalleryItem =
+  //     galleryListRef.current.firstElementChild.getBoundingClientRect().height;
 
-    const gapSizeGallery = window
-      .getComputedStyle(galleryListRef.current)
-      .getPropertyValue('gap');
+  //   const heightGalleryFooter =
+  //     galleryListRef.current.nextElementSibling.getBoundingClientRect().height;
 
-    const heightGalleryItem =
-      galleryItemRef.current.getBoundingClientRect().height;
+  //   const scrollPosition =
+  //     heightGalleryItem * 3 -
+  //     heightGalleryFooter +
+  //     0.5 * parseInt(gapSizeGallery);
 
-    const heightGalleryFooter =
-      galleryFooterRef.current.getBoundingClientRect().height;
+  //   setX(scrollPosition);
 
-    const scrollPosition =
-      heightGalleryItem * 3 -
-      heightGalleryFooter +
-      0.5 * parseInt(gapSizeGallery);
+  //   scrollToBottom(x);
+  // }, [page, x]);
 
-    window.scrollBy({
-      top: scrollPosition,
-      behavior: 'smooth',
-    });
-  };
+  useEffect(() => resetPage(), [nameImage]);
+  useEffect(() => {
+    const fetchImages = async () => {
+      try {
+        toggleVisible();
 
-  fetchImages = async (
-    page = this.state.page,
-    per_page = this.state.perPage,
-    nameImage = this.props.nameImage
-  ) => {
-    try {
-      this.props.toggleVisible();
+        const { totalHits, hits } = await getImages(page, perPage, nameImage);
 
-      const { totalHits, hits } = await getImages(page, per_page, nameImage);
+        if (!totalHits) {
+          localStorage.removeItem('nameImage');
+          rejectRequest();
+          return;
+        }
+        findImages(hits.length);
 
-      if (!totalHits) {
-        localStorage.removeItem('nameImage');
-        rejectRequest();
-        return;
+        const totalImages = totalHits === 500 ? totalHits + 1 : totalHits;
+        if (totalImages <= perPage * (page - 1) + hits.length) {
+          finishSearch();
+        }
+
+        page === 1
+          ? setImages([...hits])
+          : setImages(prevImages => [...prevImages, ...hits]);
+
+        setTotalElements(totalImages);
+      } catch (error) {
+        handlerServerError(error.message);
+      } finally {
+        toggleVisible();
       }
-      findImages(hits.length);
+    };
+    fetchImages();
+  }, [nameImage, page, perPage, toggleVisible]);
 
-      let totalImages = totalHits === 500 ? totalHits + 1 : totalHits;
-      if (totalImages <= per_page * (page - 1) + hits.length) {
-        finishSearch();
-      }
+  // const scrollToBottom = scroll => {
+  //   window.scrollBy({
+  //     top: scroll,
+  //     behavior: 'smooth',
+  //   });
+  // };
 
-      this.setState(({ images }) => ({
-        images: page === 1 ? [...hits] : [...images, ...hits],
-        totalElements: totalImages,
-      }));
-    } catch (error) {
-      handlerServerError(error.message);
-    } finally {
-      this.props.toggleVisible();
-    }
+  const resetPage = () => {
+    setImages([]);
+    setPage(1);
+    setTotalElements(null);
   };
 
-  resetPage = () => this.setState({ page: 1, images: [], totalElements: null });
+  const incrementPage = () => setPage(prevPages => prevPages + 1);
 
-  incrementPage = () =>
-    this.setState(prevState => ({ page: prevState.page + 1 }));
+  return (
+    <Gallery>
+      <GalleryList ref={galleryListRef}>
+        {images.map(image => (
+          <ImageGalleryItems image={image} key={image.id} />
+        ))}
+      </GalleryList>
 
-  render() {
-    const {
-      images,
-      totalElements,
-      galleryItemRef,
-      galleryFooterRef,
-      galleryListRef,
-    } = this.state;
-    const { visible } = this.props;
-
-    return (
-      <Gallery>
-        <GalleryList ref={galleryListRef}>
-          {images.map(image => (
-            <ImageGalleryItems
-              image={image}
-              key={image.id}
-              galleryItemRef={galleryItemRef}
-            />
-          ))}
-        </GalleryList>
-
-        <GalleryFooter ref={galleryFooterRef}>
-          <Loader visible={visible} />
-          {totalElements > images.length && !visible && (
-            <Button incrementPage={this.incrementPage}>Load more</Button>
-          )}
-        </GalleryFooter>
-      </Gallery>
-    );
-  }
+      <GalleryFooter>
+        <Loader visible={visible} />
+        {totalElements > images.length && !visible && (
+          <Button incrementPage={incrementPage}>Load more</Button>
+        )}
+      </GalleryFooter>
+    </Gallery>
+  );
 }
 
 export default ImageGallery;
 
 ImageGallery.propTypes = {
-  toggleVisible: PropTypes.func.isRequired,
-  visible: PropTypes.bool.isRequired,
   nameImage: PropTypes.string.isRequired,
+  visible: PropTypes.bool.isRequired,
+  toggleVisible: PropTypes.func.isRequired,
 };

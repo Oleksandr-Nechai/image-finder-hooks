@@ -1,51 +1,40 @@
-import { Component } from 'react';
+import { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import PropTypes from 'prop-types';
-import {
-  disableBodyScroll,
-  enableBodyScroll,
-  clearAllBodyScrollLocks,
-} from 'body-scroll-lock';
+import { disableBodyScroll, enableBodyScroll } from 'body-scroll-lock';
 
 import { Overlay, ModalStyled } from './Modal.styled';
 
-const modalPortal = document.querySelector('#modal-root');
+const targetElement = document.querySelector('#modal-root');
 
-class Modal extends Component {
-  targetElement = null;
+function Modal({ children, onClickModal }) {
+  useEffect(() => {
+    const handleKeyDown = e => {
+      if (e.code === 'Escape') {
+        onClickModal();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    disableBodyScroll(targetElement);
 
-  componentDidMount() {
-    window.addEventListener('keydown', this.handleKeyDown);
-    this.targetElement = document.querySelector('#modal-root');
-    disableBodyScroll(this.targetElement);
-  }
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      enableBodyScroll(targetElement);
+    };
+  }, [onClickModal]);
 
-  componentWillUnmount() {
-    window.removeEventListener('keydown', this.handleKeyDown);
-    enableBodyScroll(this.targetElement);
-    clearAllBodyScrollLocks();
-  }
-
-  handleKeyDown = e => {
-    if (e.code === 'Escape') {
-      this.props.onClickModal();
-    }
-  };
-
-  handleOverlayClick = e => {
+  const handleOverlayClick = e => {
     if (e.currentTarget === e.target) {
-      this.props.onClickModal();
+      onClickModal();
     }
   };
-  render() {
-    const { children } = this.props;
-    return createPortal(
-      <Overlay onClick={this.handleOverlayClick}>
-        <ModalStyled>{children}</ModalStyled>
-      </Overlay>,
-      modalPortal
-    );
-  }
+
+  return createPortal(
+    <Overlay onClick={handleOverlayClick}>
+      <ModalStyled>{children}</ModalStyled>
+    </Overlay>,
+    targetElement
+  );
 }
 
 export default Modal;
