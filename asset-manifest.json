@@ -1,10 +1,10 @@
 {
   "files": {
-    "main.js": "/image-finder-hooks/static/js/main.dc1c2aa1.js",
+    "main.js": "/image-finder-hooks/static/js/main.df1b2944.js",
     "index.html": "/image-finder-hooks/index.html",
-    "main.dc1c2aa1.js.map": "/image-finder-hooks/static/js/main.dc1c2aa1.js.map"
+    "main.df1b2944.js.map": "/image-finder-hooks/static/js/main.df1b2944.js.map"
   },
   "entrypoints": [
-    "static/js/main.dc1c2aa1.js"
+    "static/js/main.df1b2944.js"
   ]
 }
