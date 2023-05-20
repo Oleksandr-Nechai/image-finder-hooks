@@ -13,7 +13,7 @@ const BASE_PARAMS = {
   },
 };
 
-async function getImages(page, per_page, name) {
+export async function getImages(page, per_page, name) {
   const searchParams = structuredClone(BASE_PARAMS);
   searchParams.params = {
     ...searchParams.params,
@@ -23,5 +23,3 @@ async function getImages(page, per_page, name) {
 
   return data;
 }
-
-export { getImages };

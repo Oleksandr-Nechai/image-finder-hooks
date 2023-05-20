@@ -20,44 +20,50 @@ function ImageGallery({ nameImage, visible, toggleVisible }) {
   const [page, setPage] = useState(1);
   const [totalElements, setTotalElements] = useState(null);
   const [perPage] = useState(12);
-  // const [x, setX] = useState(null);
+  const [nameSearch, setNameSearch] = useState('');
+  const [scrollPosition, setscrollPosition] = useState(null);
 
   const galleryListRef = useRef();
 
-  // useEffect(() => {
-  //   if (page === 1) {
-  //     return;
-  //   }
-  //   const gapSizeGallery = window
-  //     .getComputedStyle(galleryListRef.current)
-  //     .getPropertyValue('gap');
+  useEffect(() => {
+    if (images.length < perPage) {
+      return;
+    } else if (images.length === perPage && !scrollPosition) {
+      const gapSizeGallery = window
+        .getComputedStyle(galleryListRef.current)
+        .getPropertyValue('gap');
 
-  //   const heightGalleryItem =
-  //     galleryListRef.current.firstElementChild.getBoundingClientRect().height;
+      const heightGalleryItem =
+        galleryListRef.current.firstElementChild.getBoundingClientRect().height;
 
-  //   const heightGalleryFooter =
-  //     galleryListRef.current.nextElementSibling.getBoundingClientRect().height;
+      const heightGalleryFooter =
+        galleryListRef.current.nextElementSibling.getBoundingClientRect()
+          .height;
 
-  //   const scrollPosition =
-  //     heightGalleryItem * 3 -
-  //     heightGalleryFooter +
-  //     0.5 * parseInt(gapSizeGallery);
+      const scrollAmountPixels =
+        heightGalleryItem * 3 -
+        heightGalleryFooter +
+        0.5 * parseInt(gapSizeGallery);
 
-  //   setX(scrollPosition);
-
-  //   scrollToBottom(x);
-  // }, [page, x]);
+      setscrollPosition(scrollAmountPixels);
+    } else if (images.length === perPage * page && page > 1) {
+      scrollToBottom(scrollPosition);
+    }
+  }, [images, page, perPage, scrollPosition]);
 
   useEffect(() => {
     resetPage();
+    setNameSearch(nameImage);
   }, [nameImage]);
 
   useEffect(() => {
+    if (!nameSearch) {
+      return;
+    }
     const fetchImages = async () => {
       try {
-        toggleVisible();
-
-        const { totalHits, hits } = await getImages(page, perPage, nameImage);
+        toggleVisible(true);
+        const { totalHits, hits } = await getImages(page, perPage, nameSearch);
 
         if (!totalHits) {
           localStorage.removeItem('nameImage');
@@ -79,27 +85,27 @@ function ImageGallery({ nameImage, visible, toggleVisible }) {
       } catch (error) {
         handlerServerError(error.message);
       } finally {
-        toggleVisible();
+        toggleVisible(false);
       }
     };
     fetchImages();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, perPage, toggleVisible]);
+  }, [nameSearch, page, perPage, toggleVisible]);
 
-  // const scrollToBottom = scroll => {
-  //   window.scrollBy({
-  //     top: scroll,
-  //     behavior: 'smooth',
-  //   });
-  // };
+  const scrollToBottom = scroll => {
+    window.scrollBy({
+      top: scroll,
+      behavior: 'smooth',
+    });
+  };
 
   const resetPage = () => {
     setImages([]);
     setPage(1);
     setTotalElements(null);
+    setscrollPosition('');
   };
 
-  const incrementPage = () => setPage(prevPages => prevPages + 1);
+  const handleBtnLoadMore = () => setPage(prevPages => prevPages + 1);
 
   return (
     <Gallery>
@@ -112,7 +118,7 @@ function ImageGallery({ nameImage, visible, toggleVisible }) {
       <GalleryFooter>
         <Loader visible={visible} />
         {totalElements > images.length && !visible && (
-          <Button incrementPage={incrementPage}>Load more</Button>
+          <Button handleBtnLoadMore={handleBtnLoadMore}>Load more</Button>
         )}
       </GalleryFooter>
     </Gallery>

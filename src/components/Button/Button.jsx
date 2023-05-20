@@ -1,9 +1,9 @@
 import PropTypes from 'prop-types';
 import { ButtonStyled } from './Button.styled';
 
-function Button({ children, incrementPage }) {
+function Button({ children, handleBtnLoadMore }) {
   return (
-    <ButtonStyled type="button" onClick={incrementPage}>
+    <ButtonStyled type="button" onClick={handleBtnLoadMore}>
       {children}
     </ButtonStyled>
   );
@@ -12,6 +12,6 @@ function Button({ children, incrementPage }) {
 export default Button;
 
 Button.propTypes = {
-  incrementPage: PropTypes.func.isRequired,
+  handleBtnLoadMore: PropTypes.func.isRequired,
   children: PropTypes.string.isRequired,
 };
